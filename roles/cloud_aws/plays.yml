@@ -1,0 +1,40 @@
+---
+- name: Prepare to run the workload
+  hosts: cloud
+  connection: local
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "prepare/tasks/apply.yml"
+  tags: "prepare"
+# HEY YUVAL, ALL APPLYS USED TO BE '{{ mode }}' (but got an error so switched to apply)
+- name: provision servers
+  hosts: prohosts
+  connection: local
+  strategy: free
+  vars_files:
+    - "{{ playbook_dir }}/../../vars/{{ env }}.yml"
+  tasks:
+    - include: "provision/tasks/apply.yml"
+  tags: "provision"
+
+- name: Post provision process
+  hosts: cloud
+  connection: local
+  vars_files:
+    - "{{ playbook_dir }}/../../vars/{{ env }}.yml"
+  tasks:
+    - include: "postprovision/tasks/apply.yml"
+  tags: "postprovision"
+
+- name: change /etc/hosts files so that each node knows other nodes
+  hosts: allnodes
+  strategy: free
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "{{ playbook_dir }}/../../vars/{{ env }}.yml"
+  tasks:
+    - include: "../cloud_os/namenode/tasks/apply.yml"
+  tags: "namenode"

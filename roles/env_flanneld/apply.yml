@@ -1,0 +1,66 @@
+---
+- name: fast initialize all the servers
+  hosts: allnodes
+  gather_facts: true
+  strategy: free
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "fastinitnode/tasks/apply.yml"
+  tags: "fastinitnode"
+# all 6 applys used to be {{ mode }}
+- name: Setting up etcd services
+  hosts: etcdnodes
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "etcdsetup/tasks/apply.yml"
+  tags: "etcdsetup"
+
+- name: setup flanned on all nodes
+  hosts: allnodes
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "networksetup/tasks/apply.yml"
+  tags: "networksetup"
+
+- name: setup dns attribute for docker service
+  hosts: allnodes
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "dnsdocker/tasks/apply.yml"
+  tags: "dnsdocker"
+
+- name: setup dns services and registrator
+  hosts: allnodes
+  user: "{{ cluster.ssh_user }}"
+  become: true
+  become_user: root
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "dnssetup/tasks/apply.yml"
+  tags: "dnssetup"
+
+- name: Reset connections
+  hosts: allnodes
+  user: "{{ cluster.ssh_user }}"
+  vars_files:
+    - "./../../vars/{{ env }}.yml"
+  tasks:
+    - include: "resetconn/tasks/apply.yml"
+  tags: "resetconn"
